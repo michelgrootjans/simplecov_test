@@ -7,25 +7,6 @@ namespace :coverage do
     puts ' ** Multiple SimpleCov coverage merge running'
 
     module SimpleCov
-      class << self
-        def add_not_loaded_files(result)
-          if track_files
-            result = result.dup
-            Dir[track_files].each do |file|
-              absolute = File.expand_path(file)
-
-              result[absolute] ||= [0] * File.foreach(absolute).count
-            end
-          end
-
-          result
-        end
-
-      end
-    end
-
-
-    module SimpleCov
       module ResultMerger
         class << self
           def resultset_files
@@ -52,18 +33,25 @@ namespace :coverage do
           end
 
           def resultset
-            resultset_hashes.reduce({}, :merge)
+            @resultset ||= resultset_hashes.reduce({}, :merge)
           end
         end
       end
     end
 
-    SimpleCov.coverage_dir 'coverage/merge'
-    SimpleCov.track_files "{app,lib}/**/*.rb"
+    SimpleCov.configure do
+      merge_timeout 7200
+      coverage_dir ENV['COVERAGE_DIR'] || 'coverage/merge'
+      command_name 'merged'
+      load_profile 'rails'
+      track_files '{app,lib,vendor}/**/*.rb'
+    end
+
     merged_result = SimpleCov.result
     merged_result = SimpleCov.add_not_loaded_files(merged_result.original_result)
-    # binding.pry
     SimpleCov::Result.new(merged_result).format!
 
+    covered_percent = SimpleCov.result.covered_percent.round(2)
+    SimpleCov::LastRun.write(:result => {:covered_percent => covered_percent})
   end
 end
