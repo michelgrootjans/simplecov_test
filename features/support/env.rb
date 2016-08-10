@@ -56,3 +56,9 @@ end
 # See https://github.com/cucumber/cucumber-rails/blob/master/features/choose_javascript_database_strategy.feature
 Cucumber::Rails::Database.javascript_strategy = :truncation
 
+require 'simplecov'
+
+SimpleCov.start('rails') do
+  merge_timeout 7200
+  coverage_dir ENV['COVERAGE_DIR'] || 'coverage/cucumber'
+end

@@ -50,3 +50,8 @@ end
 gem 'rspec-rails'
 gem 'cucumber-rails'
 gem 'simplecov'
+gem 'database_cleaner'
+
+gem 'pry'
+gem 'pry-nav'
+gem 'pry-stack_explorer'
