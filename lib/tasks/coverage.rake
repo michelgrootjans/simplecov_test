@@ -1,4 +1,3 @@
-
 namespace :coverage do
   task :merge => :environment do
 
@@ -28,7 +27,7 @@ namespace :coverage do
 
           def remove_empty_files(json)
             files = json.values.first.values.first
-            files.delete_if{|file_path, line_hits| line_hits.all?{|l| l == 0}}
+            files.delete_if{|_, line_hits| line_hits.all?{|l| l == 0}}
             json
           end
 
@@ -42,16 +41,21 @@ namespace :coverage do
     SimpleCov.configure do
       merge_timeout 7200
       coverage_dir ENV['COVERAGE_DIR'] || 'coverage/merge'
-      command_name 'merged'
       load_profile 'rails'
       track_files '{app,lib,vendor}/**/*.rb'
     end
 
-    merged_result = SimpleCov.result
-    merged_result = SimpleCov.add_not_loaded_files(merged_result.original_result)
-    SimpleCov::Result.new(merged_result).format!
+    original_result = SimpleCov.result.original_result
+    result_with_untouched_files = SimpleCov.add_not_loaded_files(original_result)
+    end_result = SimpleCov::Result.new(result_with_untouched_files)
+    end_result.command_name = SimpleCov.result.command_name
+    end_result.format!
 
-    covered_percent = SimpleCov.result.covered_percent.round(2)
+    covered_percent = end_result.covered_percent.round(2)
     SimpleCov::LastRun.write(:result => {:covered_percent => covered_percent})
+
+    File.open(File.join(SimpleCov.coverage_path, ".resultset.json"), "w+") do |f_|
+      f_.puts JSON.pretty_generate(end_result.to_hash)
+    end
   end
 end
