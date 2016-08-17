@@ -17,18 +17,11 @@ namespace :coverage do
               begin
                 puts " ** -> Parsing: #{path}"
                 json = JSON.parse(File.read(path))
-                remove_empty_files(json)
               rescue
                 puts " ** -> Failed to parse #{path}"
                 {}
               end
             end
-          end
-
-          def remove_empty_files(json)
-            files = json.values.first.values.first
-            files.delete_if{|_, line_hits| line_hits.all?{|l| l == 0}}
-            json
           end
 
           def resultset
@@ -45,17 +38,13 @@ namespace :coverage do
       track_files '{app,lib,vendor}/**/*.rb'
     end
 
-    original_result = SimpleCov.result.original_result
-    result_with_untouched_files = SimpleCov.add_not_loaded_files(original_result)
-    end_result = SimpleCov::Result.new(result_with_untouched_files)
-    end_result.command_name = SimpleCov.result.command_name
-    end_result.format!
+    SimpleCov.result.format!
 
-    covered_percent = end_result.covered_percent.round(2)
+    covered_percent = SimpleCov.result.covered_percent.round(2)
     SimpleCov::LastRun.write(:result => {:covered_percent => covered_percent})
 
     File.open(File.join(SimpleCov.coverage_path, ".resultset.json"), "w+") do |f_|
-      f_.puts JSON.pretty_generate(end_result.to_hash)
+      f_.puts JSON.pretty_generate(SimpleCov.result.to_hash)
     end
   end
 end
